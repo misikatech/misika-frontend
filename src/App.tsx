@@ -102,17 +102,17 @@ function App() {
               element={
                 <>
                   <Hero />
-                  <FeaturedDeals />
-                  <Categories />
+                  <FeaturedDeals onProductClick={() => {}} />
+                  <Categories  onCategoryClick={() => {}} />
                   <Testimonials />
                   <Newsletter />
                 </>
               }
             />
-            <Route path="/category" element={<CategoryPage />} />
-            <Route path="/product/:productId" element={<ProductDetail />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/category" element={<CategoryPage category={''} onProductClick={() => {}} />} />
+            <Route path="/product/:productId" element={<ProductDetail product={null} onBack={() => {}} />} />
+            <Route path="/cart" element={<Cart onCheckout={() => {}} />} />
+            <Route path="/checkout" element={<Checkout  onBack={() => {}} />} />
             <Route path="/account" element={<UserAccount />} />
             <Route path="/login" element={<Login />} />
           </Routes>
