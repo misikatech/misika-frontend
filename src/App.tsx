@@ -1,126 +1,93 @@
-// import React, { useState } from 'react';
-// import Header from './components/Header';
-// import Hero from './components/Hero';
-// import FeaturedDeals from './components/FeaturedDeals';
-// import Categories from './components/Categories';
-// import Testimonials from './components/Testimonials';
-// import Newsletter from './components/Newsletter';
-// import Footer from './components/Footer';
-// import CategoryPage from './components/CategoryPage';
-// import ProductDetail from './components/ProductDetail';
-// import Cart from './components/Cart';
-// import Checkout from './components/Checkout';
-// import UserAccount from './components/UserAccount';
-// import Login from './components/Login';
-// import { CartProvider } from './context/CartContext';
-
-// export type View = 'home' | 'category' | 'product' | 'cart' | 'checkout' | 'account' | 'login';
-
-// function App() {
-//   const [currentView, setCurrentView] = useState<View>('home');
-//   const [selectedCategory, setSelectedCategory] = useState<string>('');
-//   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-
-//   const navigateToCategory = (category: string) => {
-//     setSelectedCategory(category);
-//     setCurrentView('category');
-//   };
-
-//   const navigateToProduct = (product: any) => {
-//     setSelectedProduct(product);
-//     setCurrentView('product');
-//   };
-
-//   const renderCurrentView = () => {
-//     switch (currentView) {
-//       case 'category':
-//         return <CategoryPage category={selectedCategory} onProductClick={navigateToProduct} />;
-//       case 'product':
-//         return <ProductDetail product={selectedProduct} onBack={() => setCurrentView('category')} />;
-//       case 'cart':
-//         return <Cart onCheckout={() => setCurrentView('checkout')} />;
-//       case 'checkout':
-//         return <Checkout onBack={() => setCurrentView('cart')} />;
-//       case 'account':
-//         return <UserAccount />;
-//       case 'login':
-//         return <Login onBack={() => setCurrentView('home')} />;
-//       default:
-//         return (
-//           <>
-//             <Hero />
-//             <FeaturedDeals onProductClick={navigateToProduct} />
-//             <Categories onCategoryClick={navigateToCategory} />
-//             <Testimonials />
-//             <Newsletter />
-//           </>
-//         );
-//     }
-//   };
-
-//   return (
-//     <CartProvider>
-//       <div className="min-h-screen bg-gray-50">
-//         <Header 
-//           onNavigate={setCurrentView} 
-//           onCategoryClick={navigateToCategory}
-//         />
-//         {renderCurrentView()}
-//         <Footer />
-//       </div>
-//     </CartProvider>
-//   );
-// }
-
-// export default App;
-
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import FeaturedDeals from './components/FeaturedDeals';
-import Categories from './components/Categories';
-import Testimonials from './components/Testimonials';
-import Newsletter from './components/Newsletter';
-import Footer from './components/Footer';
-import CategoryPage from './components/CategoryPage';
-import ProductDetail from './components/ProductDetail';
-import Cart from './components/Cart';
-import Checkout from './components/Checkout';
-import UserAccount from './components/UserAccount';
-import Login from './components/Login';
+import React, { Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { WishlistProvider } from './context/WishlistContext';
+import { Layout } from './components/Layout';
+import { LoadingSpinner } from './components/ui/LoadingSpinner';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { ROUTES } from './constants';
 
-function App() {
+// Lazy load pages
+const HomePage = React.lazy(() => import('./pages/HomePage'));
+const ProductsPage = React.lazy(() => import('./pages/ProductsPage'));
+const ProductDetailPage = React.lazy(() => import('./pages/ProductDetailPage'));
+const CartPage = React.lazy(() => import('./pages/CartPage'));
+const CheckoutPage = React.lazy(() => import('./pages/CheckoutPage'));
+const OrderConfirmationPage = React.lazy(() => import('./pages/OrderConfirmationPage'));
+const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
+const ContactPage = React.lazy(() => import('./pages/ContactPage'));
+const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
+
+// Auth pages
+const LoginPage = React.lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = React.lazy(() => import('./pages/auth/RegisterPage'));
+const ForgotPasswordPage = React.lazy(() => import('./pages/auth/ForgotPasswordPage'));
+const ResetPasswordPage = React.lazy(() => import('./pages/auth/ResetPasswordPage'));
+
+const App: React.FC = () => {
   return (
-    <CartProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Header />
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <>
-                  <Hero />
-                  <FeaturedDeals onProductClick={() => {}} />
-                  <Categories  onCategoryClick={() => {}} />
-                  <Testimonials />
-                  <Newsletter />
-                </>
-              }
+    <ErrorBoundary>
+      <AuthProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <Layout>
+              <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path={ROUTES.HOME} element={<HomePage />} />
+                  <Route path={ROUTES.PRODUCTS} element={<ProductsPage />} />
+                  <Route path="/products/:id" element={<ProductDetailPage />} />
+                  <Route path={ROUTES.CONTACT} element={<ContactPage />} />
+                  
+                  {/* Auth Routes */}
+                  <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+                  <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+                  <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+                  <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+                  
+                  {/* Protected Routes */}
+                  <Route path={ROUTES.CART} element={<CartPage />} />
+                  <Route path={ROUTES.CHECKOUT} element={<CheckoutPage />} />
+                  <Route path="/orders/:id/confirmation" element={<OrderConfirmationPage />} />
+                  <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
+                  
+                  {/* 404 Route */}
+                  <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+              </Suspense>
+            </Layout>
+            
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                },
+                success: {
+                  duration: 3000,
+                  iconTheme: {
+                    primary: '#10b981',
+                    secondary: '#fff',
+                  },
+                },
+                error: {
+                  duration: 5000,
+                  iconTheme: {
+                    primary: '#ef4444',
+                    secondary: '#fff',
+                  },
+                },
+              }}
             />
-            <Route path="/category" element={<CategoryPage category={''} onProductClick={() => {}} />} />
-            <Route path="/product/:productId" element={<ProductDetail product={null} onBack={() => {}} />} />
-            <Route path="/cart" element={<Cart onCheckout={() => {}} />} />
-            <Route path="/checkout" element={<Checkout  onBack={() => {}} />} />
-            <Route path="/account" element={<UserAccount />} />
-            <Route path="/login" element={<Login />} />
-          </Routes>
-          <Footer />
-        </div>
-      </Router>
-    </CartProvider>
+          </WishlistProvider>
+        </CartProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
-}
+};
 
 export default App;
