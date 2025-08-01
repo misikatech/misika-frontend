@@ -1,46 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useQuery } from '@tanstack/react-query';
-import { QUERY_KEYS } from '../constants';
+import { useSearchParams } from 'react-router-dom';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
-import { Product, ProductFilters } from '../types';
-
-// Mock product service - replace with actual service
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Sample Product',
-    description: 'This is a sample product',
-    price: 99.99,
-    images: ['https://via.placeholder.com/300'],
-    category: { id: '1', name: 'Electronics', slug: 'electronics' },
-    sku: 'SAMPLE-001',
-    stock: 10,
-    isActive: true,
-    tags: ['sample'],
-    rating: 4.5,
-    reviewCount: 10,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+import { ProductFilters } from '../types';
+import { useProducts } from '../hooks/useProducts';
 
 const ProductsPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState<ProductFilters>({
     page: 1,
     limit: 12,
-    sortBy: 'name',
-    sortOrder: 'asc',
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
   });
 
-  const { data: products, isLoading, error } = useQuery({
-    queryKey: QUERY_KEYS.PRODUCTS.LIST(filters),
-    queryFn: async () => {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return { data: mockProducts, pagination: { page: 1, limit: 12, total: 1, totalPages: 1, hasNext: false, hasPrev: false } };
-    },
-  });
+  // Update filters based on URL parameters
+  useEffect(() => {
+    const category = searchParams.get('category');
+    const search = searchParams.get('search');
+    const page = searchParams.get('page');
+    const sortBy = searchParams.get('sortBy');
+    const sortOrder = searchParams.get('sortOrder');
+
+    setFilters(prev => ({
+      ...prev,
+      category: category || undefined,
+      search: search || undefined,
+      page: page ? parseInt(page) : 1,
+      sortBy: (sortBy as any) || 'createdAt',
+      sortOrder: (sortOrder as any) || 'desc',
+    }));
+  }, [searchParams]);
+
+  const { data: products, isLoading, error } = useProducts(filters);
 
   if (isLoading) {
     return (
@@ -61,34 +53,59 @@ const ProductsPage: React.FC = () => {
     );
   }
 
+  const currentCategory = searchParams.get('category');
+  const categoryName = currentCategory ? currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1).replace('-', ' ') : '';
+
   return (
     <>
       <Helmet>
-        <title>Products - Misika</title>
-        <meta name="description" content="Browse our wide selection of products" />
+        <title>{categoryName ? `${categoryName} - ` : ''}Products - Misika</title>
+        <meta name="description" content={`Browse our wide selection of ${categoryName ? categoryName.toLowerCase() + ' ' : ''}products at Misika. Find the best deals on groceries, electronics, garments, and more.`} />
       </Helmet>
 
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Products</h1>
-            <p className="text-gray-600">Discover our amazing collection of products</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              {categoryName ? `${categoryName} Products` : 'All Products'}
+            </h1>
+            <p className="text-gray-600">
+              {categoryName
+                ? `Discover our amazing collection of ${categoryName.toLowerCase()} products`
+                : 'Discover our amazing collection of products'
+              }
+            </p>
+            {products?.pagination && (
+              <p className="mt-1 text-sm text-gray-500">
+                Showing {products.data.length} of {products.pagination.totalItems} products
+              </p>
+            )}
           </div>
 
           {/* Products Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products?.data.map((product) => (
-              <div key={product.id} className="bg-white rounded-lg shadow-sm border p-4">
+              <div key={product.id} className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow">
                 <img
                   src={product.images[0]}
                   alt={product.name}
                   className="w-full h-48 object-cover rounded-md mb-4"
                 />
+                <div className="mb-2">
+                  <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
+                    {product.category.name}
+                  </span>
+                </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
-                <p className="text-gray-600 text-sm mb-2 line-clamp-2">{product.description}</p>
+                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold text-blue-600">${product.price}</span>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                  <div className="flex flex-col">
+                    <span className="text-lg font-bold text-orange-600">${product.price}</span>
+                    {product.salePrice && (
+                      <span className="text-sm text-gray-500 line-through">${product.salePrice}</span>
+                    )}
+                  </div>
+                  <button className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors">
                     Add to Cart
                   </button>
                 </div>
@@ -96,10 +113,16 @@ const ProductsPage: React.FC = () => {
             ))}
           </div>
 
+          {/* Empty State */}
           {products?.data.length === 0 && (
             <div className="text-center py-12">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">No products found</h2>
-              <p className="text-gray-600">Try adjusting your search or filters</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+              <p className="text-gray-600">
+                {categoryName
+                  ? `No ${categoryName.toLowerCase()} products available at the moment.`
+                  : 'Try adjusting your search or filter criteria.'
+                }
+              </p>
             </div>
           )}
         </div>
