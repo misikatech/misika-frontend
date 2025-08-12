@@ -8,6 +8,7 @@ export interface User {
   email: string;
   created_at: string;
   updated_at: string;
+  role: string;
 }
 
 export interface LoginData {
@@ -46,27 +47,45 @@ export interface AuthResponse {
     user: User;
     token: string;
     refreshToken?: string;
-  };
+  }; 
 }
 
 class AuthService {
   async login(credentials: LoginData): Promise<AuthResponse> {
-    const response = await apiService.post<ApiResponse<AuthResponse>>(
-      API_ENDPOINTS.AUTH.LOGIN,
-      credentials
-    );
+    try {
+      const response = await apiService.post<ApiResponse<any>>(
+        API_ENDPOINTS.AUTH.LOGIN,
+        credentials
+      );
 
-    if (response.success) {
-      const { user, token, refreshToken } = response.data;
-      
-      storage.set(STORAGE_KEYS.AUTH_TOKEN, token);
-      storage.set(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-      storage.set(STORAGE_KEYS.USER_DATA, user);
+      if (response.success && response.data) {
+        const { user, token, accessToken, refreshToken } = response.data;
+        
+        // Use token if available, fallback to accessToken
+        const authToken = token || accessToken;
+        
+        storage.set(STORAGE_KEYS.AUTH_TOKEN, authToken);
+        if (refreshToken) {
+          storage.set(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+        }
+        storage.set(STORAGE_KEYS.USER_DATA, user);
 
-      return response.data;
+        return {
+          success: true,
+          message: response.message || 'Login successful',
+          data: {
+            user,
+            token: authToken,
+            refreshToken
+          }
+        };
+      }
+
+      throw new Error(response.message || 'Login failed');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Login failed');
     }
-
-    throw new Error(response.message || 'Login failed');
   }
 
   async register(userData: RegisterData): Promise<AuthResponse> {
@@ -78,7 +97,7 @@ class AuthService {
     );
 
     if (response.success) {
-      const { user, token, refreshToken } = response.data;
+      const { user, token, refreshToken } = response?.data;
       
       storage.set(STORAGE_KEYS.AUTH_TOKEN, token);
       storage.set(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);

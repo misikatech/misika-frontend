@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api' || 'http://localhost:3001/api', 
   TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT || '10000'),
 };
 
@@ -21,6 +21,10 @@ export const CATEGORIES = [
   { id: '2', name: 'Grocery', slug: 'grocery', icon: '�' },
   { id: '3', name: 'Textile Homes', slug: 'home-textile', icon: '🏠' },
   { id: '4', name: 'Garments', slug: 'garments', icon: '👕' },
+  // { id: '5', name: 'Electronics', slug: 'electronics', icon: '�' },
+  // { id: '6', name: 'Beauty', slug: 'beauty', icon: '💄' },
+  // { id: '7', name: 'Sports', slug: 'sports', icon: '⚽' },
+  // { id: '8', name: 'Books', slug: 'books', icon: '�' },
 ] as const;
 
 // Contact Information
