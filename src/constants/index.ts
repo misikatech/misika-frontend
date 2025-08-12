@@ -15,16 +15,12 @@ export const STORAGE_KEYS = {
   THEME: 'theme',
 } as const;
 
-// Categories for CategoryGrid
+// Categories for CategoryGrid aas
 export const CATEGORIES = [
   { id: '1', name: 'Bags', slug: 'bags', icon: '�' },
   { id: '2', name: 'Grocery', slug: 'grocery', icon: '�' },
   { id: '3', name: 'Textile Homes', slug: 'home-textile', icon: '🏠' },
   { id: '4', name: 'Garments', slug: 'garments', icon: '👕' },
-  { id: '5', name: 'Electronics', slug: 'electronics', icon: '�' },
-  { id: '6', name: 'Beauty', slug: 'beauty', icon: '💄' },
-  { id: '7', name: 'Sports', slug: 'sports', icon: '⚽' },
-  { id: '8', name: 'Books', slug: 'books', icon: '�' },
 ] as const;
 
 // Contact Information
