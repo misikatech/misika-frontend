@@ -38,17 +38,28 @@ class ApiService {
       (response) => response.data, // Return only data
       async (error) => {
         if (error.response?.status === 401) {
-          // Handle token refresh or logout
+          // Only redirect to login if we're on a protected route or if user was previously authenticated
+          const currentPath = window.location.pathname;
+          const isProtectedRoute = ['/profile', '/cart', '/orders', '/wishlist', '/checkout'].some(route =>
+            currentPath.startsWith(route)
+          );
+          const wasAuthenticated = storage.get<string>(STORAGE_KEYS.AUTH_TOKEN);
+
+          // Clear auth data
           storage.remove(STORAGE_KEYS.AUTH_TOKEN);
           storage.remove(STORAGE_KEYS.USER_DATA);
-          window.location.href = '/login';
+
+          // Only redirect if on protected route or user was authenticated
+          if (isProtectedRoute || wasAuthenticated) {
+            window.location.href = '/login';
+          }
         }
-        
+
         // Handle network errors
         if (!error.response) {
           toast.error('Network error. Please check your connection.');
         }
-        
+
         return Promise.reject(error);
       }
     );

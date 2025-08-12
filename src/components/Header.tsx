@@ -255,11 +255,12 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, ShoppingCart, User, Search, Heart, LogOut, ChevronDown } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, Search, Heart, LogOut, ChevronDown, Package } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { ROUTES, CATEGORIES } from '../constants';
 import { Button } from './ui/Button';
+import { useCategories } from '../hooks/useCategories';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -267,6 +268,10 @@ const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { items } = useCart();
   const navigate = useNavigate();
+
+  // Fetch categories from API
+  const { data: categoriesResponse } = useCategories({ isActive: true });
+  const categories = categoriesResponse?.data || CATEGORIES;
 
   const handleLogout = async () => {
     try {
@@ -451,15 +456,19 @@ const Header: React.FC = () => {
   {isCategoryOpen && (
     <div className="absolute top-3/4 left-0 mt-2 w-[320px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 transition-all duration-200 ease-in-out">
       <div className="grid grid-cols-1 gap-1 p-2">
-        {CATEGORIES.map((category) => (
-          <Link
-            key={category.id}
-            to={`${ROUTES.PRODUCTS}?category=${category.slug}`}
-            className="flex items-center space-x-3 px-4 py-2 rounded-md hover:bg-gray-100 transition-colors"
-          >
-            <span className="text-sm text-gray-700 font-medium text-[16px]">{category.name}</span>
-          </Link>
-        ))}
+        {categories.map((category) => {
+          const categorySlug = 'slug' in category ? category.slug : category.id;
+          return (
+            <Link
+              key={category.id}
+              to={`${ROUTES.PRODUCTS}?category=${categorySlug}`}
+              className="flex items-center space-x-3 px-4 py-2 rounded-md hover:bg-gray-100 transition-colors"
+            >
+              <Package className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-700 font-medium text-[16px]">{category.name}</span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   )}
@@ -482,17 +491,21 @@ const Header: React.FC = () => {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Categories</h3>
               <div className="grid grid-cols-2 gap-2">
-                {CATEGORIES.map((category) => (
-                  <Link
-                    key={category.id}
-                    to={`${ROUTES.PRODUCTS}?category=${category.slug}`}
-                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <span className="text-xl">{category.icon}</span>
-                    <span className="text-sm">{category.name}</span>
-                  </Link>
-                ))}
+                {categories.map((category) => {
+                  const categorySlug = 'slug' in category ? category.slug : category.id;
+                  const categoryIcon = 'icon' in category ? category.icon : <Package className="w-5 h-5" />;
+                  return (
+                    <Link
+                      key={category.id}
+                      to={`${ROUTES.PRODUCTS}?category=${categorySlug}`}
+                      className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <span className="text-xl">{categoryIcon}</span>
+                      <span className="text-sm">{category.name}</span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 

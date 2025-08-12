@@ -1,110 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import {ProductCard} from '../components/product/ProductCard';
 import { Product } from '../types';
-import { Filter, Grid, List } from 'lucide-react';
+import { Filter, Grid, List, Package } from 'lucide-react';
+import { useProducts } from '../hooks/useProducts';
+import { useCategoriesWithProductCount } from '../hooks/useCategories';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('name');
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const categories = [
-    { id: 'electronics', name: 'Electronics', count: 234 },
-    { id: 'fashion', name: 'Fashion', count: 156 },
-    { id: 'sports', name: 'Sports', count: 89 },
-    { id: 'home-garden', name: 'Home & Garden', count: 67 },
-    { id: 'books', name: 'Books', count: 123 },
-    { id: 'toys', name: 'Toys', count: 45 },
+  // Fetch categories with product count
+  const { data: categoriesResponse, isLoading: categoriesLoading } = useCategoriesWithProductCount();
+
+  // Fetch products with filters
+  const { data: productsResponse, isLoading: productsLoading, error: productsError } = useProducts({
+    category: selectedCategory || undefined,
+    page: currentPage,
+    limit: 12,
+    sortBy,
+  });
+
+  // Fallback categories for when API is not available
+  const fallbackCategories = [
+    { id: 'electronics', name: 'Electronics', count: 234, slug: 'electronics' },
+    { id: 'fashion', name: 'Fashion', count: 156, slug: 'fashion' },
+    { id: 'sports', name: 'Sports', count: 89, slug: 'sports' },
+    { id: 'home-garden', name: 'Home & Garden', count: 67, slug: 'home-garden' },
+    { id: 'books', name: 'Books', count: 123, slug: 'books' },
+    { id: 'toys', name: 'Toys', count: 45, slug: 'toys' },
   ];
 
-  const products = [
-    { 
-      id: '1', 
-      name: 'iPhone 15 Pro', 
-      description: 'Latest iPhone with advanced features',
-      category: { id: 'electronics', name: 'Electronics', slug: 'electronics' }, 
-      price: 89999, 
-      images: ['https://via.placeholder.com/300x300/f0f0f0/666?text=iPhone+15+Pro'], 
-      rating: 4.5,
-      reviewCount: 128,
-      sku: 'IPH15PRO',
-      stock: 25,
-      isActive: true,
-      isFeatured: true,
-      tags: ['smartphone', 'apple'],
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    },
-    { 
-      id: '2', 
-      name: 'Nike Air Max', 
-      description: 'Comfortable running shoes',
-      category: { id: 'sports', name: 'Sports', slug: 'sports' }, 
-      price: 8999, 
-      images: ['https://via.placeholder.com/300x300/f0f0f0/666?text=Nike+Air+Max'], 
-      rating: 4.2,
-      reviewCount: 89,
-      sku: 'NIKE001',
-      stock: 15,
-      isActive: true,
-      isFeatured: false,
-      tags: ['shoes', 'nike'],
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    },
-    { 
-      id: '3', 
-      name: 'Samsung TV 55"', 
-      description: '4K Smart TV with HDR',
-      category: { id: 'electronics', name: 'Electronics', slug: 'electronics' }, 
-      price: 45999, 
-      images: ['https://via.placeholder.com/300x300/f0f0f0/666?text=Samsung+TV'], 
-      rating: 4.7,
-      reviewCount: 156,
-      sku: 'SAM55TV',
-      stock: 8,
-      isActive: true,
-      isFeatured: true,
-      tags: ['tv', 'samsung'],
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    },
-    { 
-      id: '4', 
-      name: 'Adidas T-Shirt', 
-      description: 'Cotton sports t-shirt',
-      category: { id: 'fashion', name: 'Fashion', slug: 'fashion' }, 
-      price: 1499, 
-      images: ['https://via.placeholder.com/300x300/f0f0f0/666?text=Adidas+Shirt'], 
-      rating: 4.0,
-      reviewCount: 67,
-      sku: 'ADI001',
-      stock: 30,
-      isActive: true,
-      isFeatured: false,
-      tags: ['clothing', 'adidas'],
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    },
-  ];
+  const categories = categoriesResponse?.data || fallbackCategories;
 
-  const filteredProducts = selectedCategory 
-    ? products.filter(product => product.category.id === selectedCategory)
-    : products;
+  const products = productsResponse?.data || [];
+  const pagination = productsResponse?.pagination;
 
-  const handleCategoryChange = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-    if (categoryId) {
-      setSearchParams({ category: categoryId });
+  // Products are already filtered by the API based on selectedCategory
+  const filteredProducts = products;
+
+  const handleCategoryChange = (categorySlug: string) => {
+    setSelectedCategory(categorySlug);
+    setCurrentPage(1); // Reset to first page when changing category
+    if (categorySlug) {
+      setSearchParams({ category: categorySlug });
     } else {
       setSearchParams({});
     }
   };
 
+  // Update selected category when URL params change
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get('category') || '';
+    setSelectedCategory(categoryFromUrl);
+  }, [searchParams]);
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      <Helmet>
+        <title>
+          {selectedCategory
+            ? `${categories.find(c => ('slug' in c ? c.slug : c.id) === selectedCategory)?.name || 'Products'} - Mishika`
+            : 'All Products - Mishika'
+          }
+        </title>
+        <meta
+          name="description"
+          content={selectedCategory
+            ? `Browse our ${categories.find(c => ('slug' in c ? c.slug : c.id) === selectedCategory)?.name || 'products'} collection`
+            : 'Browse all products in our online store'
+          }
+        />
+      </Helmet>
+
+      <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Categories */}
@@ -120,18 +94,25 @@ const ProductsPage: React.FC = () => {
                 >
                   All Products
                 </button>
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => handleCategoryChange(category.id)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex justify-between ${
-                      selectedCategory === category.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    <span>{category.name}</span>
-                    <span className="text-sm text-gray-500">({category.count})</span>
-                  </button>
-                ))}
+                {categories.map((category) => {
+                  const categorySlug = 'slug' in category ? category.slug : category.id;
+                  const productCount = 'productCount' in category ? category.productCount : category.count;
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => handleCategoryChange(categorySlug)}
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex justify-between ${
+                        selectedCategory === categorySlug ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'
+                      }`}
+                    >
+                      <span className="flex items-center">
+                        <Package className="w-4 h-4 mr-2" />
+                        {category.name}
+                      </span>
+                      <span className="text-sm text-gray-500">({productCount || 0})</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -142,8 +123,8 @@ const ProductsPage: React.FC = () => {
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {selectedCategory 
-                    ? categories.find(c => c.id === selectedCategory)?.name || 'Products'
+                  {selectedCategory
+                    ? categories.find(c => ('slug' in c ? c.slug : c.id) === selectedCategory)?.name || 'Products'
                     : 'All Products'
                   }
                 </h1>
@@ -180,19 +161,58 @@ const ProductsPage: React.FC = () => {
             </div>
 
             {/* Products Grid */}
-            <div className={`grid gap-6 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                : 'grid-cols-1'
-            }`}>
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            {productsLoading ? (
+              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {[...Array(6)].map((_, index) => (
+                  <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-100 animate-pulse">
+                    <div className="aspect-square bg-gray-200 rounded-t-lg"></div>
+                    <div className="p-4">
+                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded mb-2 w-3/4"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : productsError ? (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to load products</h3>
+                <p className="text-gray-500 mb-4">There was an error loading products. Please try again later.</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                <p className="text-gray-500">
+                  {selectedCategory
+                    ? `No products found in this category. Try browsing other categories.`
+                    : 'No products available at the moment.'
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className={`grid gap-6 ${
+                viewMode === 'grid'
+                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                  : 'grid-cols-1'
+              }`}>
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 };
 

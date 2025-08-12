@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api' || 'http://localhost:3001/api', 
+  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
   TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT || '10000'),
 };
 
@@ -85,6 +85,13 @@ export const API_ENDPOINTS = {
     SEARCH: '/products/search',
     CATEGORIES: '/products/categories',
     FEATURED: '/products/featured',
+  },
+  CATEGORIES: {
+    LIST: '/categories',
+    CREATE: '/categories',
+    UPDATE: '/categories',
+    DELETE: '/categories',
+    BY_SLUG: (slug: string) => `/categories/slug/${slug}`,
   },
   CART: {
     GET: '/cart',
@@ -178,6 +185,13 @@ export const QUERY_KEYS = {
     SEARCH: (query: string) => ['products', 'search', query],
     CATEGORIES: ['products', 'categories'],
     FEATURED: ['products', 'featured'],
+  },
+  CATEGORIES: {
+    ALL: ['categories'],
+    LIST: (params?: any) => ['categories', 'list', params],
+    DETAIL: (id: string) => ['categories', 'detail', id],
+    BY_SLUG: (slug: string) => ['categories', 'slug', slug],
+    WITH_PRODUCT_COUNT: ['categories', 'with-product-count'],
   },
   ORDERS: {
     ALL: ['orders'],

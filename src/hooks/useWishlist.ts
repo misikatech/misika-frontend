@@ -2,14 +2,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { wishlistService } from '../services/wishlist.service';
 import { QUERY_KEYS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../constants';
+import { useAuth } from '../context/AuthContext';
 
 export const useWishlist = () => {
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
 
-  // Get wishlist query
+  // Get wishlist query - only fetch if authenticated
   const wishlistQuery = useQuery({
     queryKey: QUERY_KEYS.WISHLIST.LIST,
     queryFn: () => wishlistService.getWishlist(),
+    enabled: isAuthenticated, // Only run query if user is authenticated
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
@@ -46,6 +49,7 @@ export const useWishlist = () => {
   };
 
   const isInWishlist = (productId: string): boolean => {
+    if (!isAuthenticated) return false;
     return wishlistQuery.data?.some((item: any) => item.productId === Number(productId)) || false;
   };
 
