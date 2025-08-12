@@ -1,133 +1,198 @@
 import React, { useState, useEffect } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { useSearchParams } from 'react-router-dom';
-import { LoadingSpinner } from '../components/ui/LoadingSpinner';
-import { ProductFilters } from '../types';
-import { useProducts } from '../hooks/useProducts';
+import {ProductCard} from '../components/product/ProductCard';
+import { Product } from '../types';
+import { Filter, Grid, List } from 'lucide-react';
 
 const ProductsPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const [filters, setFilters] = useState<ProductFilters>({
-    page: 1,
-    limit: 12,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState('name');
 
-  // Update filters based on URL parameters
-  useEffect(() => {
-    const category = searchParams.get('category');
-    const search = searchParams.get('search');
-    const page = searchParams.get('page');
-    const sortBy = searchParams.get('sortBy');
-    const sortOrder = searchParams.get('sortOrder');
+  const categories = [
+    { id: 'electronics', name: 'Electronics', count: 234 },
+    { id: 'fashion', name: 'Fashion', count: 156 },
+    { id: 'sports', name: 'Sports', count: 89 },
+    { id: 'home-garden', name: 'Home & Garden', count: 67 },
+    { id: 'books', name: 'Books', count: 123 },
+    { id: 'toys', name: 'Toys', count: 45 },
+  ];
 
-    setFilters(prev => ({
-      ...prev,
-      category: category || undefined,
-      search: search || undefined,
-      page: page ? parseInt(page) : 1,
-      sortBy: (sortBy as any) || 'createdAt',
-      sortOrder: (sortOrder as any) || 'desc',
-    }));
-  }, [searchParams]);
+  const products = [
+    { 
+      id: '1', 
+      name: 'iPhone 15 Pro', 
+      description: 'Latest iPhone with advanced features',
+      category: { id: 'electronics', name: 'Electronics', slug: 'electronics' }, 
+      price: 89999, 
+      images: ['https://via.placeholder.com/300x300/f0f0f0/666?text=iPhone+15+Pro'], 
+      rating: 4.5,
+      reviewCount: 128,
+      sku: 'IPH15PRO',
+      stock: 25,
+      isActive: true,
+      isFeatured: true,
+      tags: ['smartphone', 'apple'],
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    },
+    { 
+      id: '2', 
+      name: 'Nike Air Max', 
+      description: 'Comfortable running shoes',
+      category: { id: 'sports', name: 'Sports', slug: 'sports' }, 
+      price: 8999, 
+      images: ['https://via.placeholder.com/300x300/f0f0f0/666?text=Nike+Air+Max'], 
+      rating: 4.2,
+      reviewCount: 89,
+      sku: 'NIKE001',
+      stock: 15,
+      isActive: true,
+      isFeatured: false,
+      tags: ['shoes', 'nike'],
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    },
+    { 
+      id: '3', 
+      name: 'Samsung TV 55"', 
+      description: '4K Smart TV with HDR',
+      category: { id: 'electronics', name: 'Electronics', slug: 'electronics' }, 
+      price: 45999, 
+      images: ['https://via.placeholder.com/300x300/f0f0f0/666?text=Samsung+TV'], 
+      rating: 4.7,
+      reviewCount: 156,
+      sku: 'SAM55TV',
+      stock: 8,
+      isActive: true,
+      isFeatured: true,
+      tags: ['tv', 'samsung'],
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    },
+    { 
+      id: '4', 
+      name: 'Adidas T-Shirt', 
+      description: 'Cotton sports t-shirt',
+      category: { id: 'fashion', name: 'Fashion', slug: 'fashion' }, 
+      price: 1499, 
+      images: ['https://via.placeholder.com/300x300/f0f0f0/666?text=Adidas+Shirt'], 
+      rating: 4.0,
+      reviewCount: 67,
+      sku: 'ADI001',
+      stock: 30,
+      isActive: true,
+      isFeatured: false,
+      tags: ['clothing', 'adidas'],
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    },
+  ];
 
-  const { data: products, isLoading, error } = useProducts(filters);
+  const filteredProducts = selectedCategory 
+    ? products.filter(product => product.category.id === selectedCategory)
+    : products;
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Products</h1>
-          <p className="text-gray-600">Please try again later.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const currentCategory = searchParams.get('category');
-  const categoryName = currentCategory ? currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1).replace('-', ' ') : '';
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    if (categoryId) {
+      setSearchParams({ category: categoryId });
+    } else {
+      setSearchParams({});
+    }
+  };
 
   return (
-    <>
-      <Helmet>
-        <title>{categoryName ? `${categoryName} - ` : ''}Products - Misika</title>
-        <meta name="description" content={`Browse our wide selection of ${categoryName ? categoryName.toLowerCase() + ' ' : ''}products at Misika. Find the best deals on groceries, electronics, garments, and more.`} />
-      </Helmet>
-
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              {categoryName ? `${categoryName} Products` : 'All Products'}
-            </h1>
-            <p className="text-gray-600">
-              {categoryName
-                ? `Discover our amazing collection of ${categoryName.toLowerCase()} products`
-                : 'Discover our amazing collection of products'
-              }
-            </p>
-            {products?.pagination && (
-              <p className="mt-1 text-sm text-gray-500">
-                Showing {products.data.length} of {products.pagination.totalItems} products
-              </p>
-            )}
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar - Categories */}
+          <div className="lg:w-1/4">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Categories</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleCategoryChange('')}
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                    !selectedCategory ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'
+                  }`}
+                >
+                  All Products
+                </button>
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleCategoryChange(category.id)}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex justify-between ${
+                      selectedCategory === category.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>{category.name}</span>
+                    <span className="text-sm text-gray-500">({category.count})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products?.data.map((product) => (
-              <div key={product.id} className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow">
-                <img
-                  src={product.images[0]}
-                  alt={product.name}
-                  className="w-full h-48 object-cover rounded-md mb-4"
-                />
-                <div className="mb-2">
-                  <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
-                    {product.category.name}
-                  </span>
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-lg font-bold text-orange-600">${product.price}</span>
-                    {product.salePrice && (
-                      <span className="text-sm text-gray-500 line-through">${product.salePrice}</span>
-                    )}
-                  </div>
-                  <button className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors">
-                    Add to Cart
+          {/* Main Content */}
+          <div className="lg:w-3/4">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {selectedCategory 
+                    ? categories.find(c => c.id === selectedCategory)?.name || 'Products'
+                    : 'All Products'
+                  }
+                </h1>
+                <p className="text-gray-600">{filteredProducts.length} products found</p>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="name">Sort by Name</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="rating">Rating</option>
+                </select>
+                
+                <div className="flex border border-gray-300 rounded-lg">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 ${viewMode === 'grid' ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
+                  >
+                    <Grid className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 ${viewMode === 'list' ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
+                  >
+                    <List className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Empty State */}
-          {products?.data.length === 0 && (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-              <p className="text-gray-600">
-                {categoryName
-                  ? `No ${categoryName.toLowerCase()} products available at the moment.`
-                  : 'Try adjusting your search or filter criteria.'
-                }
-              </p>
             </div>
-          )}
+
+            {/* Products Grid */}
+            <div className={`grid gap-6 ${
+              viewMode === 'grid' 
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                : 'grid-cols-1'
+            }`}>
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

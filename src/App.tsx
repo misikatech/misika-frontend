@@ -26,6 +26,14 @@ const RegisterPage = React.lazy(() => import('./pages/auth/RegisterPage'));
 const ForgotPasswordPage = React.lazy(() => import('./pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage = React.lazy(() => import('./pages/auth/ResetPasswordPage'));
 
+// Add these imports
+import AdminLanding from './pages/admin/AdminLanding';
+import ProductList from './pages/admin/ProductList';
+import Inventory from './pages/admin/Inventory';
+import VendorManagement from './pages/admin/VendorManagement';
+import OrderManagement from './pages/admin/OrderManagement';  
+import UserManagement from './pages/admin/UserManagement';
+
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
@@ -55,6 +63,14 @@ const App: React.FC = () => {
                   
                   {/* 404 Route */}
                   <Route path="*" element={<NotFoundPage />} />
+                  
+                  {/* Admin Routes */}
+                  <Route path="/admin" element={<AdminLanding />} />
+                  <Route path="/admin/products" element={<ProductList />} />
+                  <Route path="/admin/inventory" element={<Inventory />} />
+                  <Route path="/admin/vendors" element={<VendorManagement />} />
+                  <Route path="/admin/orders" element={<OrderManagement />} />
+                  <Route path="/admin/users" element={<UserManagement />} />
                 </Routes>
               </Suspense>
             </Layout>

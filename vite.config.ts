@@ -18,6 +18,12 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
+        bypass: (req) => {
+          // Bypass placeholder image requests
+          if (req.url?.includes('/api/placeholder/')) {
+            return req.url.replace('/api/placeholder/', 'https://via.placeholder.com/');
+          }
+        },
       },
     },
   },
